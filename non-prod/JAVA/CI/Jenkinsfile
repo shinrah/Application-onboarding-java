@@ -14,6 +14,28 @@ pipeline {
     }
 
     stages {
+        // Clean up first to clear workspace before starting fresh
+        stage('Clean up') {
+            steps {
+                script {
+                    cleanWs() // Clean up the workspace
+                    echo "Workspace cleaned up before starting the pipeline."
+                }
+            }
+        }
+
+        stage('Git Checkout') {
+            steps {
+                git credentialsId: 'Github-token', branch: "${params.GIT_Branch_Tag}", url: "${giurl}"
+            }
+        }
+
+        stage('Checkout Git Branch') {
+            steps {
+                git branch: "${env.GitBranch}", url: "${env.giurl}"
+            }
+        }
+
         stage('Print environment and mode') {
             steps {
                 script {
@@ -25,13 +47,6 @@ pipeline {
             }
         }
 
-        stage('Checkout Git Branch') {
-            steps {
-                git credentialsId: 'Github-token', branch: "${env.GitBranch}", url: "${env.giurl}"
-            }
-        }
-
-        // Build Artifacts stage
         stage('Build Artifacts') {
             steps {
                 script {
@@ -43,21 +58,20 @@ pipeline {
             }
         }
 
-        // Clean-up stage (added after Build Artifacts)
-        stage('Clean up') {
-            steps {
-                script {
-                    cleanWs()
-                    echo "Formatted GIT branch tag is ${formattedGitBranch}"
-                }
-            }
-        }
-
-        // Actual build stage (Maven build)
         stage('Build') {
             steps {
                 echo "Running Maven build..."
                 sh 'mvn clean package'
+            }
+        }
+
+        // Clean up after build (optional)
+        stage('Clean up after build') {
+            steps {
+                script {
+                    cleanWs() // Clean up workspace after build
+                    echo "Workspace cleaned up after the build."
+                }
             }
         }
     }
