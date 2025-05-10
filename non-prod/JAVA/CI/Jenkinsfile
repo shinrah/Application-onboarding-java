@@ -14,12 +14,46 @@ pipeline {
     }
 
     stages {
-        stage('Git Checkout') {
+        stage('Print environment and mode') {
             steps {
-                git credentialsId: 'Github-token', branch: "${params.GIT_Branch_Tag}", url: "${giurl}"
+                script {
+                    env.Host = sh(returnStdout: true, script: "echo ${params.host}").trim()
+                    env.Mode = sh(returnStdout: true, script: "echo ${params.mode}").trim()
+                    env.Deployment_Method = sh(returnStdout: true, script: "echo ${params.mode}").trim()
+                    env.GitBranch = params.GIT_Branch_Tag
+                }
             }
         }
 
+        stage('Checkout Git Branch') {
+            steps {
+                git credentialsId: 'Github-token', branch: "${env.GitBranch}", url: "${env.giurl}"
+            }
+        }
+
+        // Build Artifacts stage
+        stage('Build Artifacts') {
+            steps {
+                script {
+                    if (params.mode == "Deploy") {
+                        currentBuild.displayName = "${params.host}_${params.mode}_${BUILD_NUMBER}"
+                        echo "Ready to build for ${params.host} from branch ${params.GIT_Branch_Tag}"
+                    }
+                }
+            }
+        }
+
+        // Clean-up stage (added after Build Artifacts)
+        stage('Clean up') {
+            steps {
+                script {
+                    cleanWs()
+                    echo "Formatted GIT branch tag is ${formattedGitBranch}"
+                }
+            }
+        }
+
+        // Actual build stage (Maven build)
         stage('Build') {
             steps {
                 echo "Running Maven build..."
