@@ -14,9 +14,16 @@ pipeline {
     }
 
     stages {
-        stage('git checkout') {
+        stage('Git Checkout') {
             steps {
-                git credentialsId: 'github-token', branch: "${params.GIT_Branch_Tag}", url: "${giurl}"
+                git credentialsId: 'Github-token', branch: "${params.GIT_Branch_Tag}", url: "${giurl}"
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Running Maven build..."
+                sh 'mvn clean package'
             }
         }
     }
