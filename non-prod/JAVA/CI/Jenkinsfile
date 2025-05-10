@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        giurl = 'https://github.com/shinrah/java-fix-1.git'
+        giurl = 'https://github.com/shinrah/JAVA-Application-.git'
         gitBranch = "${params.GIT_Branch_Tag}"
         formattedGitBranch = "${params.GIT_Branch_Tag}" // Adjust if formatting is needed
     }
