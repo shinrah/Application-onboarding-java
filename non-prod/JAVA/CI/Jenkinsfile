@@ -69,7 +69,7 @@ pipeline {
         stage('Clean up after build') {
             steps {
                 script {
-                    cleanWs() // Clean up workspace after build
+                   //  cleanWs() // Clean up workspace after build
                     echo "Workspace cleaned up after the build."
                 }
             }
