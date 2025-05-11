@@ -7,7 +7,7 @@ pipeline {
         formattedGitBranch = "${params.GIT_Branch_Tag}" // Adjust if formatting is needed
         ARTIFACTORY_URL = 'http://54.82.63.24:8081/artifactory'  // Artifactory URL
         REPO_KEY = 'artifactorymaven'  // Your Artifactory local repository
-        CREDENTIALS_ID = 'jfrog-artifactory'  // Credentials for Artifactory
+        CREDENTIALS_ID = 'jfrog'  // Credentials for Artifactory (updated to the correct ID for the API key)
     }
 
     parameters {
