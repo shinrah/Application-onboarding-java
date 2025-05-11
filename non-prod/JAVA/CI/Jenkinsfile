@@ -4,14 +4,36 @@ pipeline {
     environment {
         giurl = 'https://github.com/shinrah/JAVA-Application-.git'
         gitBranch = "${params.GIT_Branch_Tag}"
-        formattedGitBranch = "${params.GIT_Branch_Tag}"
+        formattedGitBranch = "${params.GIT_Branch_Tag}" // Adjust if formatting is needed
         ARTIFACTORY_URL = 'http://54.82.63.24:8081/artifactory'  // Artifactory URL
         REPO_KEY = 'artifactorymaven'  // Your Artifactory local repository
         CREDENTIALS_ID = 'jfrog-artifactory'  // Credentials for Artifactory
     }
 
+    parameters {
+        choice(name: 'mode', choices: ['Deploy', 'stop', 'start', 'restart'], description: 'Choose mode for deployment or starting the application server')
+        choice(name: 'host', choices: ['main', 'master', 'UAT'], description: 'Choose environment to deploy master')
+        choice(name: 'GIT_Branch_Tag', choices: ['main', 'master', 'feature-branch', 'UAT'], description: 'Select Git branch to deploy')
+    }
+
     stages {
-        stage('Checkout') {
+        // Clean up first to clear workspace before starting fresh
+        stage('Clean up') {
+            steps {
+                script {
+                    cleanWs() // Clean up the workspace
+                    echo "Workspace cleaned up before starting the pipeline."
+                }
+            }
+        }
+
+        stage('Git Checkout') {
+            steps {
+                git credentialsId: 'Github-token', branch: "${params.GIT_Branch_Tag}", url: "${giurl}"
+            }
+        }
+
+        stage('Checkout Git Branch') {
             steps {
                 git branch: "${env.GitBranch}", url: "${env.giurl}"
             }
@@ -50,19 +72,19 @@ pipeline {
         stage('Clean up after build') {
             steps {
                 script {
-                    // Clean up workspace after build
+                    // cleanWs() // Clean up workspace after build
                     echo "Workspace cleaned up after the build."
                 }
             }
         }
 
-        // New Artifactory upload stage (no modification to existing stages)
+        // The New Artifactory Upload Stage - To Upload the WAR File
         stage('Upload to Artifactory') {
             steps {
                 script {
                     echo "Uploading WAR file to Artifactory..."
 
-                    // Use JFrog CLI to upload WAR file to Artifactory
+                    // Upload the WAR file to the Artifactory repository using JFrog CLI
                     sh """
                     jfrog rt u 'webapp/target/webapp.war' '${REPO_KEY}/webapp/' --build-name=${BUILD_NUMBER} --build-number=${BUILD_NUMBER} --url=${ARTIFACTORY_URL} --credentials-id=${CREDENTIALS_ID}
                     """
