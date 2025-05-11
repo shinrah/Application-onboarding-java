@@ -2,6 +2,9 @@ pipeline {
     agent any
 
     environment {
+        giurl = 'https://github.com/shinrah/JAVA-Application-.git'
+        gitBranch = "${params.GIT_Branch_Tag}"
+        formattedGitBranch = "${params.GIT_Branch_Tag}"
         ARTIFACTORY_URL = 'http://54.82.63.24:8081/artifactory'  // Artifactory URL
         REPO_KEY = 'artifactorymaven'  // Your Artifactory local repository
         CREDENTIALS_ID = 'jfrog-artifactory'  // Credentials for Artifactory
@@ -53,7 +56,7 @@ pipeline {
             }
         }
 
-        // New Artifactory upload stage (not modifying existing stages)
+        // New Artifactory upload stage (no modification to existing stages)
         stage('Upload to Artifactory') {
             steps {
                 script {
