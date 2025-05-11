@@ -7,7 +7,8 @@ pipeline {
         formattedGitBranch = "${params.GIT_Branch_Tag}" // Adjust if formatting is needed
         ARTIFACTORY_URL = 'http://54.82.63.24:8081/artifactory'  // Artifactory URL
         REPO_KEY = 'artifactorymaven'  // Your Artifactory local repository
-        CREDENTIALS_ID = 'jfrog'  // Credentials for Artifactory (updated to the correct ID for the API key)
+        CREDENTIALS_ID = 'jfrog'  // Correct Jenkins credentials for the API key
+        SERVER_ID = 'my-artifactory'  // Server ID for JFrog CLI configuration
     }
 
     parameters {
@@ -84,9 +85,12 @@ pipeline {
                 script {
                     echo "Uploading WAR file to Artifactory..."
 
-                    // Upload the WAR file to the Artifactory repository using JFrog CLI
+                    // First, configure JFrog CLI with the API key from Jenkins credentials
+                    sh "jfrog config add ${SERVER_ID} --artifactory-url=${ARTIFACTORY_URL} --apikey=${env.ARTIFACTORY_API_KEY}"
+
+                    // Upload the WAR file to Artifactory using the configured server ID
                     sh """
-                    jfrog rt u 'webapp/target/webapp.war' '${REPO_KEY}/webapp/' --build-name=${BUILD_NUMBER} --build-number=${BUILD_NUMBER} --url=${ARTIFACTORY_URL} --credentials-id=${CREDENTIALS_ID}
+                    jfrog rt u 'webapp/target/webapp.war' '${REPO_KEY}/webapp/' --build-name=${BUILD_NUMBER} --build-number=${BUILD_NUMBER} --server-id=${SERVER_ID}
                     """
                 }
             }
