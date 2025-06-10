@@ -1,100 +1,66 @@
 pipeline {
     agent any
 
-    environment {
-        giurl = 'https://github.com/shinrah/JAVA-Application-.git'
-        gitBranch = "${params.GIT_Branch_Tag}"
-        formattedGitBranch = "${params.GIT_Branch_Tag}" // Adjust if formatting is needed
-        ARTIFACTORY_URL = 'http://54.82.63.24:8081/artifactory'  // Artifactory URL
-        REPO_KEY = 'artifactorymaven'  // Your Artifactory local repository
-        CREDENTIALS_ID = 'jfrog'  // Correct Jenkins credentials for the API key
-        SERVER_ID = 'my-artifactory'  // Server ID for JFrog CLI configuration
-    }
-
-    parameters {
-        choice(name: 'mode', choices: ['Deploy', 'stop', 'start', 'restart'], description: 'Choose mode for deployment or starting the application server')
-        choice(name: 'host', choices: ['main', 'master', 'UAT'], description: 'Choose environment to deploy master')
-        choice(name: 'GIT_Branch_Tag', choices: ['main', 'master', 'feature-branch', 'UAT'], description: 'Select Git branch to deploy')
+    parameters { 
+        choice(
+            choices: ['Deploy', 'stop', 'start', 'restart'], 
+            description: 'Choose mode for deployment and managing the app', 
+            name: 'mode'
+        )
+        string(
+            defaultValue: 'UAT',
+            name: 'Branch_Name_For_UI',
+            description: 'Branch name for UI'
+        )
+        string(
+            defaultValue: 'central-data',
+            name: 'Branch_Name_For_JAVA',
+            description: 'Branch name for Java'
+        )
+        choice(
+            choices: ['UAT', 'DEV', 'IT'], 
+            description: 'Choose Environment', 
+            name: 'Host'
+        )
+        choice(
+            choices: ['UAT', 'uatexternal', 'staging'], 
+            description: 'Choose Environment for build', 
+            name: 'Denv'
+        )
     }
 
     stages {
-        // Clean up first to clear workspace before starting fresh
-        stage('Clean up') {
+        stage('Print Environment and Mode') {
             steps {
                 script {
-                    cleanWs() // Clean up the workspace
-                    echo "Workspace cleaned up before starting the pipeline."
-                }
-            }
-        }
-
-        stage('Git Checkout') {
-            steps {
-                git credentialsId: 'Github-token', branch: "${params.GIT_Branch_Tag}", url: "${giurl}"
-            }
-        }
-
-        stage('Checkout Git Branch') {
-            steps {
-                git branch: "${env.GitBranch}", url: "${env.giurl}"
-            }
-        }
-
-        stage('Print environment and mode') {
-            steps {
-                script {
-                    env.Host = sh(returnStdout: true, script: "echo ${params.host}").trim()
+                    env.Host = sh(returnStdout: true, script: "echo ${params.Host}").trim()
                     env.Mode = sh(returnStdout: true, script: "echo ${params.mode}").trim()
-                    env.Deployment_Method = sh(returnStdout: true, script: "echo ${params.mode}").trim()
-                    env.GitBranch = params.GIT_Branch_Tag
                 }
             }
         }
 
-        stage('Build Artifacts') {
+        stage("Building App") {
             steps {
                 script {
                     if (params.mode == "Deploy") {
-                        currentBuild.displayName = "${params.host}_${params.mode}_${BUILD_NUMBER}"
-                        echo "Ready to build for ${params.host} from branch ${params.GIT_Branch_Tag}"
+                        def giturl = 'https://github.com/shinrah/JAVA-Application-.git'
+                        echo "Using Git URL: ${giturl}"
                     }
                 }
             }
         }
 
-        stage('Build') {
+        stage('Clean up') {
             steps {
-                echo "Running Maven build..."
-                sh 'mvn clean package'
+                cleanWs()
             }
         }
 
-        // Clean up after build (optional)
-        stage('Clean up after build') {
+        stage('Preparation and Git Checkout for UI') {
             steps {
-                script {
-                    // cleanWs() // Clean up workspace after build
-                    echo "Workspace cleaned up after the build."
-                }
-            }
-        }
-
-        // The New Artifactory Upload Stage - To Upload the WAR File
-        stage('Upload to Artifactory') {
-            steps {
-                script {
-                    echo "Uploading WAR file to Artifactory..."
-
-                    // First, configure JFrog CLI with the API key from Jenkins credentials
-                    sh "jfrog config add ${SERVER_ID} --artifactory-url=${ARTIFACTORY_URL} --apikey=${env.ARTIFACTORY_API_KEY}"
-
-                    // Upload the WAR file to Artifactory using the configured server ID
-                    sh """
-                    jfrog rt u 'webapp/target/webapp.war' '${REPO_KEY}/webapp/' --build-name=${BUILD_NUMBER} --build-number=${BUILD_NUMBER} --server-id=${SERVER_ID}
-                    """
-                }
+                echo "Checking out code from source repository"
+                checkout([$class: 'GitSCM', branches: [[name: params.Branch_Name_For_UI]], userRemoteConfigs: [[url: "https://github.com/shinrah/UI-Application.git"]]])
             }
         }
     }
 }
-
