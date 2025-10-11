@@ -1,66 +1,8 @@
 pipeline {
-    agent any
-
-    parameters { 
-        choice(
-            choices: ['Deploy', 'stop', 'start', 'restart'], 
-            description: 'Choose mode for deployment and managing the app', 
-            name: 'mode'
-        )
-        string(
-            defaultValue: 'UAT',
-            name: 'Branch_Name_For_UI',
-            description: 'Branch name for UI'
-        )
-        string(
-            defaultValue: 'central-data',
-            name: 'Branch_Name_For_JAVA',
-            description: 'Branch name for Java'
-        )
-        choice(
-            choices: ['UAT', 'DEV', 'IT'], 
-            description: 'Choose Environment', 
-            name: 'Host'
-        )
-        choice(
-            choices: ['UAT', 'uatexternal', 'staging'], 
-            description: 'Choose Environment for build', 
-            name: 'Denv'
-        )
-    }
-
-    stages {
-        stage('Print Environment and Mode') {
-            steps {
-                script {
-                    env.Host = sh(returnStdout: true, script: "echo ${params.Host}").trim()
-                    env.Mode = sh(returnStdout: true, script: "echo ${params.mode}").trim()
-                }
-            }
-        }
-
-        stage("Building App") {
-            steps {
-                script {
-                    if (params.mode == "Deploy") {
-                        def giturl = 'https://github.com/shinrah/JAVA-Application-.git'
-                        echo "Using Git URL: ${giturl}"
-                    }
-                }
-            }
-        }
-
-        stage('Clean up') {
-            steps {
-                cleanWs()
-            }
-        }
-
-        stage('Preparation and Git Checkout for UI') {
-            steps {
-                echo "Checking out code from source repository"
-                checkout([$class: 'GitSCM', branches: [[name: params.Branch_Name_For_UI]], userRemoteConfigs: [[url: "https://github.com/shinrah/UI-Application.git"]]])
-            }
-        }
+    agent { label 'agent any' }
+    parameters {
+          choice (
+              name: 'mode', choices: ['deploy', 'stop', 'start', 'restart'], description: 'deployment description' )
     }
 }
+
