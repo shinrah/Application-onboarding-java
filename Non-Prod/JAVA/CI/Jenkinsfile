@@ -1,8 +1,10 @@
 pipeline {
     agent { label 'agent any' }
     parameters {
-          choice (
-              name: 'mode', choices: ['deploy', 'stop', 'start', 'restart'], description: 'deployment description' )
+          choice ( name: 'mode', choices: ['deploy', 'stop', 'start', 'restart'], description: 'deployment description' )
+          choice ( choices: ['UAT'], description: 'chose host', name: 'host' )
+          string ( defaultValue: 'master', name: 'Git_Branch_Tag' )
+        
     }
 }
 
