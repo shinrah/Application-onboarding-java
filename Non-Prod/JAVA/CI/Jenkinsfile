@@ -18,6 +18,12 @@ pipeline {
                     env.Git_Branch_Tag = sh(returnStdout: true, script: "echo ${params.Git_Branch_Tag}").trim()
                 }
             }
+
+        stage('deploy') {
+            steps{
+                script{
+                    if ("${mode}" == "deploy") {
+                        
         }
     }
 }
