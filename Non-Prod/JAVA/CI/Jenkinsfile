@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'agent any' }
+    agent any
     parameters {
         choice (
             name: 'mode', choices: ['deploy', 'stop', 'start', 'restart'], description: 'deployment description' )
