@@ -1,31 +1,17 @@
 pipeline {
     agent any
-    parameters {
-        choice (
-            name: 'mode', choices: ['deploy', 'stop', 'start', 'restart'], description: 'deployment description' )
-        choice (
-            choices: ['UAT'], description: 'chose host', name: 'host' )
-        string (
-            defaultValue: 'master', name: 'Git_Branch_Tag' )
-    }
 
     stages {
-        stage('print env and mode') {
+        stage('clean the workspace') {
             steps {
-                script {
-                    env.host = sh(returnStdout: true, script: "echo ${params.host}").trim()
-                    env.mode = sh(returnStdout: true, script: "echo ${params.mode}").trim()
-                    env.Git_Branch_Tag = sh(returnStdout: true, script: "echo ${params.Git_Branch_Tag}").trim()
-                }
+                cleanWs()
             }
+        }
 
-        stage('deploy') {
-            steps{
-                script{
-                    if ("${mode}" == "deploy") {
-                        
+        stage('clone the repository') {
+            steps {
+                sh 'git clone https://github.com/shinrah/JAVA-Application-.git' 
+            }
         }
     }
 }
-
-
