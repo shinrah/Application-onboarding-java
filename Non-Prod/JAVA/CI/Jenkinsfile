@@ -21,8 +21,11 @@ pipeline {
         stage('build the project') {
             steps {
                 dir('JAVA-Application-') {
+                    echo 'check the current java version'
                     sh 'java --version'
+                    echo 'check the current maven version'
                     sh 'mvn -version'
+                    echo 'check the pom.xml file availablily'
                     sh "ls -l 'pom.xml'"
                     sh 'mvn clean install'
                 }
