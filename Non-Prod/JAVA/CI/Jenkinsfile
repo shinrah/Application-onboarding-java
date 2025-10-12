@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    parameters {
+        choice ( name : 'mode' , choices: ['deploy', 'start', 'restart', 'stop'], description : 'select the deployment' )
+        string ( name: 'Branch', defaultValue: 'main', description: 'git branch tag' )
+    }
 
     stages {
         stage('clean the workspace') {
@@ -10,7 +14,7 @@ pipeline {
 
         stage('clone the repository') {
             steps {
-                sh 'git clone -b main https://github.com/shinrah/JAVA-Application-.git' 
+                sh "git clone -b ${params.Branch} https://github.com/shinrah/JAVA-Application-.git"
             }
         }
 
