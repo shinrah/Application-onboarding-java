@@ -13,5 +13,11 @@ pipeline {
                 sh 'git clone https://github.com/shinrah/JAVA-Application-.git' 
             }
         }
+
+        stage('build the project') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
     }
 }
