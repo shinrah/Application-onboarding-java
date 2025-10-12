@@ -10,7 +10,7 @@ pipeline {
 
         stage('clone the repository') {
             steps {
-                sh 'git clone https://github.com/shinrah/JAVA-Application-.git' 
+                sh 'git clone -b main https://github.com/shinrah/JAVA-Application-.git' 
             }
         }
 
