@@ -22,7 +22,7 @@ pipeline {
             steps {
                 dir('JAVA-Application-') {
                     sh 'java --version'
-                    sh 'mvn version'
+                    sh 'mvn -version'
                     sh "ls -l 'pom.xml'"
                     sh 'mvn clean install'
                 }
