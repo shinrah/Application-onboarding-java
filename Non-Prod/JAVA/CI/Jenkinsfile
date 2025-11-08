@@ -1,47 +1,63 @@
 pipeline {
     agent any
-    parameters {
-        choice ( name : 'mode' , choices: ['deploy', 'start', 'restart', 'stop'], description : 'select the deployment' )
-        string ( name: 'Branch', defaultValue: 'main', description: 'git branch tag' )
-    }
 
     stages {
-        stage('clean the workspace') {
+        stage('Clean workspace') {
             steps {
                 cleanWs()
             }
         }
 
-        stage('clone the repository') {
+        stage('Clone repository') {
             steps {
-                checkout([
-                    $class: 'GitSCM', 
-                    branches: [[name: "${params.Branch}"]],
-                    userRemoteConfigs: [[url: 'https://github.com/shinrah/JAVA-Application-.git']],
-                    extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'JAVA-Application-']]
-                ])
+                git branch: 'main', url: 'https://github.com/shinrah/JAVA-Application-.git'
             }
         }
 
-        stage('build the project') {
+        stage('Build and Test') {
             steps {
-                dir('JAVA-Application-') {
-                    echo 'check the current java version'
-                    sh 'java --version'
-                    echo 'check the current maven version'
-                    sh 'mvn -version'
-                    echo 'check the pom.xml file availablily'
-                    sh "ls -l 'pom.xml'"
-                    sh 'mvn clean install'
+                sh 'mvn clean test package'
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                echo 'Archiving WAR file...'
+                archiveArtifacts artifacts: 'webapp/target/*.war', fingerprint: true
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                script {
+                    echo 'Uploading WAR to S3...'
+                    withAWS(credentials: '510891f4-2632-4680-ad11-9f52e0e5bf16', region: 'ap-south-1') {
+                        s3Upload(
+                            bucket: 'rahul-jenkins-artifacts',
+                            file: 'webapp/target/webapp.war',
+                            path: "builds/${env.BUILD_NUMBER}/webapp.war"
+                        )
+                    }
                 }
             }
         }
 
-        stage('clean') {
+        stage('Trigger Deployment Job') {
             steps {
-                cleanWs()
+                echo 'Triggering downstream deployment pipeline...'
+                build job: 'deploy-to-tomcat', parameters: [
+                    string(name: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}")
+                ]
             }
         }
-        
+    }
+
+    post {
+        success {
+            echo "✅ Build and Upload completed successfully."
+        }
+        failure {
+            echo "❌ Build failed. Check logs."
+        }
     }
 }
