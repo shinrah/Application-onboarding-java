@@ -41,7 +41,7 @@ pipeline {
                 }
             }
         }
-
+/*
         stage('Trigger Deployment Job') {
             steps {
                 echo 'Triggering downstream deployment pipeline...'
@@ -49,7 +49,7 @@ pipeline {
                     string(name: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}")
                 ]
             }
-        }
+     */   }
     }
 
     post {
