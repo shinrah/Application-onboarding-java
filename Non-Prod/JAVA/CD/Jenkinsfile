@@ -8,7 +8,8 @@ pipeline {
     environment {
         AWS_REGION = 'ap-south-1'
         S3_BUCKET = 'rahul-jenkins-artifacts'
-        WAR_FILE = 'webapp.war'
+        WAR_FILE = 'webapp.war'                // The local file name after download
+        WAR_S3_PATH = "builds/${params.BUILD_NUMBER}/webapp.war" // Adjust this if folder name differs
         TOMCAT_URL = 'http://13.127.233.188:8080'
         TOMCAT_CREDENTIALS = 'tomcat-deployer'
     }
@@ -23,13 +24,25 @@ pipeline {
         stage('Download WAR from S3') {
             steps {
                 script {
-                    echo "Downloading WAR file for build #${params.BUILD_NUMBER} from S3..."
+                    echo "🔽 Downloading WAR file for build #${params.BUILD_NUMBER} from S3..."
                     withAWS(credentials: '510891f4-2632-4680-ad11-9f52e0e5bf16', region: "${env.AWS_REGION}") {
                         s3Download(
                             bucket: "${env.S3_BUCKET}",
-                            file: "${env.WAR_FILE}",
-                            path: "builds/${params.BUILD_NUMBER}/webapp.war"
+                            file: "${env.WAR_FILE}",   // Local file name
+                            path: "${env.WAR_S3_PATH}" // Remote path in S3
                         )
+                    }
+                }
+            }
+        }
+
+        stage('Verify WAR File Exists') {
+            steps {
+                script {
+                    if (!fileExists("${env.WAR_FILE}")) {
+                        error("❌ WAR file not found after S3 download. Check your S3 path or build number.")
+                    } else {
+                        echo "✅ WAR file downloaded successfully: ${env.WAR_FILE}"
                     }
                 }
             }
@@ -37,7 +50,7 @@ pipeline {
 
         stage('Deploy WAR to Tomcat') {
             steps {
-                echo "Deploying ${env.WAR_FILE} to Tomcat at ${env.TOMCAT_URL}..."
+                echo "🚀 Deploying ${env.WAR_FILE} to Tomcat at ${env.TOMCAT_URL}..."
                 deploy adapters: [
                     tomcat9(
                         credentialsId: "${env.TOMCAT_CREDENTIALS}",
@@ -45,7 +58,7 @@ pipeline {
                         url: "${env.TOMCAT_URL}"
                     )
                 ],
-                contextPath: 'webapp',
+                contextPath: 'webapp',  // App will run at http://13.127.233.188:8080/webapp/
                 war: "${env.WAR_FILE}"
             }
         }
@@ -53,7 +66,7 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 script {
-                    echo "Verifying deployment on Tomcat..."
+                    echo "🔍 Verifying deployment on Tomcat..."
                     sh "curl -I ${env.TOMCAT_URL}/webapp/ || true"
                 }
             }
