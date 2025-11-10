@@ -41,16 +41,16 @@ pipeline {
                 }
             }
         }
-/*
+
         stage('Trigger Deployment Job') {
             steps {
                 echo 'Triggering downstream deployment pipeline...'
-                build job: 'deploy-to-tomcat', parameters: [
+                build job: 'downstreamjob', parameters: [
                     string(name: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}")
                 ]
             }
         }
-        */
+        
     }
 
     post {
