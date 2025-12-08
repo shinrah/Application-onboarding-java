@@ -1,64 +1,49 @@
 pipeline {
-    agent any
+    agent { label 'BuildAgent' }
 
-    stages {
-        stage('Clean workspace') {
-            steps {
-                cleanWs()
-            }
-        }
-
-        stage('Clone repository') {
-            steps {
-                git branch: 'main', url: 'https://github.com/shinrah/JAVA-Application-.git'
-            }
-        }
-
-        stage('Build and Test') {
-            steps {
-                sh 'mvn clean test package'
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                echo 'Archiving WAR file...'
-                archiveArtifacts artifacts: 'webapp/target/*.war', fingerprint: true
-            }
-        }
-
-        stage('Upload to S3') {
-            steps {
-                script {
-                    echo 'Uploading WAR to S3...'
-                    withAWS(credentials: '510891f4-2632-4680-ad11-9f52e0e5bf16', region: 'ap-south-1') {
-                        s3Upload(
-                            bucket: 'rahul-jenkins-artifacts',
-                            file: 'webapp/target/webapp.war',
-                            path: "builds/${env.BUILD_NUMBER}/webapp.war"
-                        )
-                    }
-                }
-            }
-        }
-
-        stage('Trigger Deployment Job') {
-            steps {
-                echo 'Triggering downstream deployment pipeline...'
-                build job: 'downstreamjob', parameters: [
-                    string(name: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}")
-                ]
-            }
-        }
-        
+    parameters {
+        choice(name: 'GIT_Branch_Tag', choices: ['ISS_UAT_RELEASE'], description: 'Fixed branch')
+        choice(name: 'Mode', choices: ['Deploy'], description: 'Deploy and upload artifacts')
     }
 
-    post {
-        success {
-            echo " Build and Upload completed successfully."
-        }
-        failure {
-            echo "❌ Build failed. Check logs."
+    stages {
+        stage('Build and Upload Artifacts') {
+            when { expression { params.Mode == "Deploy" } }
+            steps {
+                script {
+                    currentBuild.displayName = "${params.GIT_Branch_Tag}_${BUILD_NUMBER}"
+
+                    def giturl = "https://github.com/shinrah/JAVA-Application-.git"
+                    // def artifactServer = Artifactory.server 'DevOpsArtifactory01'
+                    // def artifactBuildInfo = Artifactory.newBuildInfo()
+                    // def artifactMaven = Artifactory.newMavenBuild()
+                    // artifactMaven.tool = 'MVN388'
+
+                    cleanWs()
+                    
+                    echo '[Stage] Checkout Code'
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: "${params.GIT_Branch_Tag}"]],
+                        userRemoteConfigs: [[credentialsId: 'sapdevopsgit', url: "${giturl}"]]
+                    ])
+
+                    echo '[Stage] Building + Sonar'
+                    // withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        withMaven(jdk: 'APPLEJDK17', maven: 'MVN388', mavenLocalRepo: '.m2repo') {
+                            sh """
+                                java -version
+                                mvn -v
+                                mvn clean install -DskipTests=true \
+                                // sonar:sonar \
+                                // -Dsonar.projectKey=ISS \
+                                // -Dsonar.host.url=${SONAR_URL} \
+                                // -Dsonar.login=${SONAR_TOKEN} \
+                                // -Dsonar.branch.name=${params.GIT_Branch_Tag}
+                            """
+                        }
+                    // }
+                }
+            }
         }
     }
 }
