@@ -28,6 +28,7 @@ pipeline {
                     ])
 
                     echo '[Stage] Building + Sonar'
+                    sh "echo JDK Location: ${tool 'APPLEJDK17'}"
                     // withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                     withMaven(jdk: 'APPLEJDK17', maven: 'MVN388', mavenLocalRepo: '.m2repo') {
                         withEnv([
