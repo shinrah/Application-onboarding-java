@@ -38,7 +38,8 @@ pipeline {
                             sh """
                                 java -version
                                 mvn -v
-                                mvn clean install -DskipTests=true \
+                                mvn clean install 
+                                // -DskipTests=true \
                                 // sonar:sonar \
                                 // -Dsonar.projectKey=ISS \
                                 // -Dsonar.host.url=${SONAR_URL} \
