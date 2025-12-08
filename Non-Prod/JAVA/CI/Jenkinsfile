@@ -38,13 +38,12 @@ pipeline {
                             sh """
                                 java -version
                                 mvn -v
-                                mvn clean install 
-                                // -DskipTests=true \
-                                // sonar:sonar \
-                                // -Dsonar.projectKey=ISS \
-                                // -Dsonar.host.url=${SONAR_URL} \
-                                // -Dsonar.login=${SONAR_TOKEN} \
-                                // -Dsonar.branch.name=${params.GIT_Branch_Tag}
+                                mvn clean install -DskipTests=true 
+                                 #sonar:sonar 
+                                 #-Dsonar.projectKey=ISS \
+                                 #-Dsonar.host.url=${SONAR_URL} \
+                                 #-Dsonar.login=${SONAR_TOKEN} \
+                                 #-Dsonar.branch.name=${params.GIT_Branch_Tag}
                             """
                         }
                     }  // END withMaven
