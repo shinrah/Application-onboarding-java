@@ -14,10 +14,6 @@ pipeline {
                     currentBuild.displayName = "${params.GIT_Branch_Tag}_${BUILD_NUMBER}"
 
                     def giturl = "https://github.com/shinrah/JAVA-Application-.git"
-                    // def artifactServer = Artifactory.server 'DevOpsArtifactory01'
-                    // def artifactBuildInfo = Artifactory.newBuildInfo()
-                    // def artifactMaven = Artifactory.newMavenBuild()
-                    // artifactMaven.tool = 'MVN388'
 
                     cleanWs()
                     
@@ -29,7 +25,7 @@ pipeline {
 
                     echo '[Stage] Building + Sonar'
                     sh "echo JDK Location: ${tool 'APPLEJDK17'}"
-                    // withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+
                     withMaven(jdk: 'APPLEJDK17', maven: 'MVN388', mavenLocalRepo: '.m2repo') {
                         withEnv([
                             "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.1.0.12-2.el8_5.x86_64",
@@ -38,14 +34,30 @@ pipeline {
                             sh """
                                 java -version
                                 mvn -v
-                                mvn clean install 
-
+                                mvn clean install
                             """
                         }
-                    }  // END withMaven
-                    // } // END withCredentials
-                }  // END script
-            }  // END steps
-        }  // END stage
-    }  // END stages
-}  // END pipeline
+                    }
+                }
+            }
+        }
+
+        stage('Deploy WAR to Tomcat') {
+            when { expression { params.Mode == "Deploy" } }
+            steps {
+                script {
+                    echo '[Stage] Deploy to Tomcat Container'
+
+                    def warFile = sh(script: "ls target/*.war", returnStdout: true).trim()
+
+                    sh """
+                        docker cp ${warFile} mytomcat:/usr/local/tomcat/webapps/
+                        docker restart mytomcat
+                    """
+
+                    echo '🎉 Deployment Completed Successfully!'
+                }
+            }
+        }
+    }
+}
